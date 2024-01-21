@@ -1,7 +1,7 @@
 import httpx
 
-from config import API_URL
-from models import CompletionRequest, CompletionResponseModel
+from .config import API_URL
+from .models import CompletionRequest, CompletionResponseModel
 
 
 class YandexLLMClient:
