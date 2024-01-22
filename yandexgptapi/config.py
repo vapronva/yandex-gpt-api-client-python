@@ -1,3 +1,12 @@
+from enum import StrEnum
+
+
+class ModelURI(StrEnum):
+    YANDEX_GPT = "yandexgpt/latest"
+    YANDEX_GPT_LITE = "yandexgpt-lite/latest"
+    SUMMARIZATION = "summarization/latest"
+
+
 API_URL_TEXTGENERATION: str = (
     "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 )
