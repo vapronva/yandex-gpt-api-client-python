@@ -17,5 +17,11 @@ if __name__ == "__main__":
         ],
     )
     client = YandexLLMClient(iam_token=iam_token, folder_id=folder_id)
-    response = client.post_completion(request_data=request_payload)
-    print(response.result.alternatives[0].message.text) if response else None
+    operation = client.post_completion_async(request_data=request_payload)
+    if operation:
+        print(f"Operation ID: {operation.id}")
+        response = client.wait_for_completion(operation.id)
+        if response:
+            print(response.alternatives[0].message.text)
+        else:
+            print("Failed to get a response or an error occurred.")

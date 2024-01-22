@@ -37,3 +37,15 @@ class CompletionResponse(BaseModel):
 
 class CompletionResponseModel(BaseModel):
     result: CompletionResponse
+
+
+class Operation(BaseModel):
+    id: str
+    description: str
+    createdAt: str
+    createdBy: str
+    modifiedAt: str
+    done: bool
+    metadata: dict | None = None
+    error: dict | None = None
+    response: CompletionResponse | None = None
