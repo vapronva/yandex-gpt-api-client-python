@@ -1,26 +1,28 @@
 import time
 
-from httpx import Client
+from httpx import Client, Response
 
-from .config import (
-    API_URL_OPERATIONS_STATUS,
-    API_URL_TEXTGENERATION,
-    API_URL_TEXTGENERATION_ASYNC,
-)
+from .config import API_URLS
 from .models import (
+    CompletionAPIResponse,
     CompletionRequest,
     CompletionResponse,
-    CompletionAPIResponse,
     Operation,
 )
 
 
 class YandexLLMClient:
-    def __init__(self, iam_token: str, folder_id: str, **kwargs) -> None:
-        self.api_url = API_URL_TEXTGENERATION
-        self._headers = {
+    def __init__(
+        self,
+        iam_token: str,
+        folder_id: str,
+        data_logging_enabled: bool = False,
+        **kwargs,
+    ) -> None:
+        self._headers: dict[str, str] = {
             "Authorization": f"Bearer {iam_token}",
             "x-folder-id": f"{folder_id}",
+            "x-data-logging-enabled": "false" if not data_logging_enabled else "true",
         }
         self._httpx_client_options = kwargs
 
@@ -41,8 +43,8 @@ class YandexLLMClient:
         self._client.headers.update(new_headers)
 
     def post_completion(self, request_data: CompletionRequest) -> CompletionResponse:
-        response = self._client.post(
-            self.api_url,
+        response: Response = self._client.post(
+            url=API_URLS.TEXTGENERATION,
             json=request_data.model_dump(mode="python"),
         )
         response.raise_for_status()
@@ -50,19 +52,17 @@ class YandexLLMClient:
         return parsed_response.result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
-        response = self._client.post(
-            API_URL_TEXTGENERATION_ASYNC,
+        response: Response = self._client.post(
+            url=API_URLS.TEXTGENERATION_ASYNC,
             json=request_data.model_dump(mode="python"),
-            timeout=30,
         )
         response.raise_for_status()
         return Operation(**response.json())
 
     def get_operation_status(self, operation_id: str) -> Operation:
-        operation_status_url = API_URL_OPERATIONS_STATUS.format(
-            operation_id=operation_id,
+        response: Response = self._client.get(
+            url=API_URLS.OPERATIONS.format(operation_id=operation_id)
         )
-        response = self._client.get(operation_status_url, timeout=30)
         response.raise_for_status()
         return Operation(**response.json())
 
@@ -72,11 +72,12 @@ class YandexLLMClient:
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
         while True:
-            operation = self.get_operation_status(operation_id)
+            operation: Operation = self.get_operation_status(operation_id)
             if operation.done and operation.response:
                 return operation.response
             elif operation.error:
-                raise RuntimeError(
+                msg: str = (
                     f"Operation #{operation_id} failed with error: {operation.error}"
                 )
+                raise RuntimeError(msg)
             time.sleep(poll_interval)
