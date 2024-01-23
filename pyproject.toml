@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yandex-gpt-api-client"
+version = "0.1.0"
+description = "Synchronous (async) client for Yandex's large language models API. Fire off long-running text generation tasks without sweating the wait."
+authors = [{ name = "Vladimir (vapronva)", email = "git@vprw.ru" }]
+requires-python = ">= 3.12"
+license = { file = "LICENSE" }
+dependencies = ["httpx>=0.26,<0.27", "pydantic>=2.5,<2.6"]
+keywords = [
+  "yandex gpt",
+  "rest api client",
+  "httpx",
+  "pydantic",
+  "yandex cloud",
+]
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://gl.vprw.ru/vapronva/yandex-gpt-api-client-python"
+
+[tool.setuptools]
+packages = ["yandexgptapi"]
