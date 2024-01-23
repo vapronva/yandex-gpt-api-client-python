@@ -61,7 +61,7 @@ class YandexLLMClient:
 
     def get_operation_status(self, operation_id: str) -> Operation:
         response: Response = self._client.get(
-            url=API_URLS.OPERATIONS.format(operation_id=operation_id)
+            url=API_URLS.OPERATIONS.format(operation_id=operation_id),
         )
         response.raise_for_status()
         return Operation(**response.json())

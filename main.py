@@ -32,7 +32,7 @@ if __name__ == "__main__":
         timeout=10,
     ) as client:
         response: CompletionResponse = client.post_completion(
-            request_data=request_payload
+            request_data=request_payload,
         )
         print(response.alternatives[0].message.text)
     # TextGenerationAsync
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         timeout=10,
     ) as client:
         operation: Operation = client.post_completion_async(
-            request_data=request_payload
+            request_data=request_payload,
         )
         if operation:
             print(f"Operation ID: {operation.id}")
