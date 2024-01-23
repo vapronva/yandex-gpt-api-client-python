@@ -44,7 +44,6 @@ if __name__ == "__main__":
         operation: Operation = client.post_completion_async(
             request_data=request_payload,
         )
-        if operation:
-            print(f"Operation ID: {operation.id}")
-            response: CompletionResponse = client.wait_for_completion(operation.id)
-            print(response.alternatives[0].message.text)
+        print(f"Operation ID: {operation.id}")
+        response: CompletionResponse = client.wait_for_completion(operation.id)
+        print(response.alternatives[0].message.text)
