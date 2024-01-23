@@ -35,7 +35,7 @@ class CompletionResponse(BaseModel):
     modelVersion: str
 
 
-class CompletionResponseModel(BaseModel):
+class CompletionAPIResponse(BaseModel):
     result: CompletionResponse
 
 
