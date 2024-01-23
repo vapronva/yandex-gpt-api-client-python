@@ -2,7 +2,7 @@ import time
 
 from httpx import Client, Response
 
-from .config import API_URLS
+from .config import APIEndpoints
 from .models import (
     CompletionAPIResponse,
     CompletionRequest,
@@ -44,7 +44,7 @@ class YandexLLMClient:
 
     def post_completion(self, request_data: CompletionRequest) -> CompletionResponse:
         response: Response = self._client.post(
-            url=API_URLS.TEXTGENERATION,
+            url=APIEndpoints.TEXTGENERATION,
             json=request_data.model_dump(mode="python"),
         )
         response.raise_for_status()
@@ -53,7 +53,7 @@ class YandexLLMClient:
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
         response: Response = self._client.post(
-            url=API_URLS.TEXTGENERATION_ASYNC,
+            url=APIEndpoints.TEXTGENERATION_ASYNC,
             json=request_data.model_dump(mode="python"),
         )
         response.raise_for_status()
@@ -61,7 +61,7 @@ class YandexLLMClient:
 
     def get_operation_status(self, operation_id: str) -> Operation:
         response: Response = self._client.get(
-            url=API_URLS.OPERATIONS.format(operation_id=operation_id),
+            url=APIEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
         response.raise_for_status()
         return Operation(**response.json())
