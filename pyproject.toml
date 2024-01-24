@@ -4,12 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yandex-gpt-api-client"
-version = "0.2.0"
+version = "0.3.0"
 description = "Synchronous (async) client for Yandex's large language models API. Fire off long-running text generation tasks without sweating the wait."
 authors = [{ name = "Vladimir (vapronva)", email = "git@vprw.ru" }]
 requires-python = ">= 3.12"
 license = { file = "LICENSE" }
-dependencies = ["httpx>=0.26,<0.27", "pydantic>=2.5,<2.6"]
+dependencies = [
+  "httpx>=0.26,<0.27",
+  "pydantic>=2.5,<2.6",
+  "typing_extensions>=4.9,<5.0",
+]
 keywords = [
   "yandex gpt",
   "rest api client",
