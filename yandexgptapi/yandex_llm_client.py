@@ -1,6 +1,8 @@
 import time
+from typing import Any
 
 from httpx import Client, Response
+from pydantic import BaseModel
 
 from .config import APIEndpoints
 from .models import (
@@ -44,28 +46,33 @@ class YandexLLMClient:
         self._headers = new_headers
         self._client.headers.update(new_headers)
 
-    def post_completion(self, request_data: CompletionRequest) -> CompletionResponse:
-        response: Response = self._client.post(
-            url=APIEndpoints.TEXTGENERATION,
-            json=request_data.model_dump(mode="python"),
-        )
+    def _make_request(
+        self, method: str, url: str, request_data: BaseModel | None = None,
+    ) -> Response:
+        request_args: dict[str, Any] = {"url": url}
+        if request_data:
+            request_args["json"] = request_data.model_dump(mode="python")
+        response: Response = getattr(self._client, method)(**request_args)
         response.raise_for_status()
+        return response
+
+    def post_completion(self, request_data: CompletionRequest) -> CompletionResponse:
+        response: Response = self._make_request(
+            "post", APIEndpoints.TEXTGENERATION, request_data,
+        )
         parsed_response = CompletionAPIResponse(**response.json())
         return parsed_response.result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
-        response: Response = self._client.post(
-            url=APIEndpoints.TEXTGENERATION_ASYNC,
-            json=request_data.model_dump(mode="python"),
+        response: Response = self._make_request(
+            "post", APIEndpoints.TEXTGENERATION_ASYNC, request_data,
         )
-        response.raise_for_status()
         return Operation(**response.json())
 
     def get_operation_status(self, operation_id: str) -> Operation:
-        response: Response = self._client.get(
-            url=APIEndpoints.OPERATIONS.format(operation_id=operation_id),
+        response: Response = self._make_request(
+            "get", APIEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
-        response.raise_for_status()
         return Operation(**response.json())
 
     def wait_for_completion(
@@ -85,20 +92,16 @@ class YandexLLMClient:
             time.sleep(poll_interval)
 
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
-        response: Response = self._client.post(
-            url=APIEndpoints.TOKENIZE,
-            json=request_data.model_dump(mode="python"),
+        response: Response = self._make_request(
+            "post", APIEndpoints.TOKENIZE, request_data,
         )
-        response.raise_for_status()
         return TokenizeResponse(**response.json())
 
     def post_tokenize_completion(
         self,
         request_data: CompletionRequest,
     ) -> TokenizeResponse:
-        response: Response = self._client.post(
-            url=APIEndpoints.TOKENIZE_COMPLETION,
-            json=request_data.model_dump(mode="python"),
+        response: Response = self._make_request(
+            "post", APIEndpoints.TOKENIZE_COMPLETION, request_data,
         )
-        response.raise_for_status()
         return TokenizeResponse(**response.json())
