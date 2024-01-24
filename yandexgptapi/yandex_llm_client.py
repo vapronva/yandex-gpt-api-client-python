@@ -70,8 +70,7 @@ class YandexLLMClient:
         if request_data:
             request_args["json"] = request_data.model_dump(mode="python")
         with self._client.stream(method, **request_args) as response:
-            for chunk in response.iter_text():
-                yield chunk
+            yield from response.iter_text()
 
     def post_completion(
         self,
