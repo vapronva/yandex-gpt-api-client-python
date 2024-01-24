@@ -7,6 +7,8 @@ from yandexgptapi.models import (
     CompletionResponse,
     Message,
     Operation,
+    TokenizeRequest,
+    TokenizeResponse,
 )
 from yandexgptapi.yandex_llm_client import YandexLLMClient
 
@@ -31,19 +33,28 @@ if __name__ == "__main__":
         folder_id=folder_id,
         timeout=10,
     ) as client:
-        response: CompletionResponse = client.post_completion(
+        # TextGeneration
+        response_tg: CompletionResponse = client.post_completion(
             request_data=request_payload,
         )
-        print(response.alternatives[0].message.text)
-    # TextGenerationAsync
-    with YandexLLMClient(
-        iam_token=iam_token,
-        folder_id=folder_id,
-        timeout=10,
-    ) as client:
-        operation: Operation = client.post_completion_async(
+        print(response_tg.alternatives[0].message.text)
+        # TextGenerationAsync
+        operation_tga: Operation = client.post_completion_async(
             request_data=request_payload,
         )
-        print(f"Operation ID: {operation.id}")
-        response: CompletionResponse = client.wait_for_completion(operation.id)
-        print(response.alternatives[0].message.text)
+        print(f"Operation ID: {operation_tga.id}")
+        response_tga: CompletionResponse = client.wait_for_completion(operation_tga.id)
+        print(response_tga.alternatives[0].message.text)
+        # Tokenize
+        response_t: TokenizeResponse = client.post_tokenize(
+            request_data=TokenizeRequest(
+                modelUri=f"gpt://{folder_id}/{ModelURI.YANDEX_GPT.value}",
+                text="Ты - Саратов",
+            ),
+        )
+        print(response_t.tokens)
+        # TokenizeCompletion
+        response_tc: TokenizeResponse = client.post_tokenize_completion(
+            request_data=request_payload,
+        )
+        print(response_tc.tokens)
