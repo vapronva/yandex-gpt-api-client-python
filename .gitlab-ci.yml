@@ -1,5 +1,6 @@
 stages:
   - test
+  - publish
 
 sast:
   stage: test
@@ -8,6 +9,19 @@ include:
   - template: Security/SAST-IaC.latest.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
+
+ruff-lint:
+  stage: test
+  image: docker.io/library/python:3.12
+  before_script:
+    - pip install ruff
+  script:
+    - ruff check example.py yandexgptapi/
+  only:
+    - merge_requests
+    - main
+    - develop
+    - tags
 
 sonarqube-check:
   stage: test
@@ -48,4 +62,29 @@ sonarqube-vulnerability-report:
     expire_in: 1 day
     reports:
       sast: gl-sast-sonar-report.json
+
+scanmycode-analysis-starter:
+  stage: test
+  image: docker.io/library/alpine:latest
+  before_script:
+    - apk update
+    - apk add --no-cache curl
+  script:
+    - curl -X POST "${SCANMYCODE_WEBHOOK_URL}"
+  only:
+    - merge_requests
+    - main
+    - develop
+
+build-publish-local-pypi:
+  stage: publish
+  image: docker.io/library/python:3.12
+  before_script:
+    - pip install -r requirements.txt
+    - pip install twine setuptools>=69 build wheel
+  script:
+    - python -m build
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  only:
+    - tags
 
