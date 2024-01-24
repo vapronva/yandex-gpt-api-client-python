@@ -7,7 +7,7 @@ class Message(BaseModel):
 
 
 class CompletionOptions(BaseModel):
-    stream: bool
+    stream: bool = False
     temperature: float
     maxTokens: int
 

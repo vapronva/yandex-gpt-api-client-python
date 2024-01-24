@@ -1,5 +1,6 @@
+import json
 import time
-from typing import Any
+from typing import Any, Generator
 
 from httpx import Client, Response
 from pydantic import BaseModel
@@ -47,7 +48,10 @@ class YandexLLMClient:
         self._client.headers.update(new_headers)
 
     def _make_request(
-        self, method: str, url: str, request_data: BaseModel | None = None,
+        self,
+        method: str,
+        url: str,
+        request_data: BaseModel | None = None,
     ) -> Response:
         request_args: dict[str, Any] = {"url": url}
         if request_data:
@@ -56,22 +60,57 @@ class YandexLLMClient:
         response.raise_for_status()
         return response
 
-    def post_completion(self, request_data: CompletionRequest) -> CompletionResponse:
+    def _make_stream_request(
+        self,
+        method: str,
+        url: str,
+        request_data: BaseModel | None = None,
+    ) -> Generator[str, None, None]:
+        request_args: dict[str, Any] = {"url": url}
+        if request_data:
+            request_args["json"] = request_data.model_dump(mode="python")
+        with self._client.stream(method, **request_args) as response:
+            for chunk in response.iter_text():
+                yield chunk
+
+    def post_completion(
+        self,
+        request_data: CompletionRequest,
+    ) -> CompletionResponse:
+        request_data.completionOptions.stream = False
         response: Response = self._make_request(
-            "post", APIEndpoints.TEXTGENERATION, request_data,
+            method="post",
+            url=APIEndpoints.TEXTGENERATION,
+            request_data=request_data,
         )
         parsed_response = CompletionAPIResponse(**response.json())
         return parsed_response.result
 
+    def post_completion_stream(
+        self, request_data: CompletionRequest,
+    ) -> Generator[CompletionResponse, None, None]:
+        request_data.completionOptions.stream = True
+        response: Generator[str, None, None] = self._make_stream_request(
+            method="post",
+            url=APIEndpoints.TEXTGENERATION,
+            request_data=request_data,
+        )
+        for chunk in response:
+            parsed_response = CompletionAPIResponse(**json.loads(chunk))
+            yield parsed_response.result
+
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
         response: Response = self._make_request(
-            "post", APIEndpoints.TEXTGENERATION_ASYNC, request_data,
+            method="post",
+            url=APIEndpoints.TEXTGENERATION_ASYNC,
+            request_data=request_data,
         )
         return Operation(**response.json())
 
     def get_operation_status(self, operation_id: str) -> Operation:
         response: Response = self._make_request(
-            "get", APIEndpoints.OPERATIONS.format(operation_id=operation_id),
+            method="get",
+            url=APIEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
         return Operation(**response.json())
 
@@ -93,7 +132,9 @@ class YandexLLMClient:
 
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
         response: Response = self._make_request(
-            "post", APIEndpoints.TOKENIZE, request_data,
+            method="post",
+            url=APIEndpoints.TOKENIZE,
+            request_data=request_data,
         )
         return TokenizeResponse(**response.json())
 
@@ -102,6 +143,8 @@ class YandexLLMClient:
         request_data: CompletionRequest,
     ) -> TokenizeResponse:
         response: Response = self._make_request(
-            "post", APIEndpoints.TOKENIZE_COMPLETION, request_data,
+            method="post",
+            url=APIEndpoints.TOKENIZE_COMPLETION,
+            request_data=request_data,
         )
         return TokenizeResponse(**response.json())
