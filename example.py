@@ -6,6 +6,7 @@ from yandexgptapi.models import (
     CompletionRequest,
     CompletionResponse,
     Message,
+    MessageRole,
     Operation,
     TokenizeRequest,
     TokenizeResponse,
@@ -18,13 +19,12 @@ if __name__ == "__main__":
     request_payload = CompletionRequest(
         modelUri=f"gpt://{folder_id}/{ModelURI.YANDEX_GPT.value}",
         completionOptions=CompletionOptions(
-            stream=False,
             temperature=0.6,
             maxTokens=256,
         ),
         messages=[
-            Message(role="system", text="Ты - Саратов"),
-            Message(role="user", text="Кто?"),
+            Message(role=MessageRole.SYSTEM, text="Ты - Саратов"),
+            Message(role=MessageRole.SYSTEM, text="Кто?"),
         ],
     )
     # TextGeneration
@@ -34,27 +34,38 @@ if __name__ == "__main__":
         timeout=10,
     ) as client:
         # TextGeneration
+        print("{:=^50}".format("TextGeneration"))
         response_tg: CompletionResponse = client.post_completion(
             request_data=request_payload,
         )
-        print(response_tg.alternatives[0].message.text)
+        print(response_tg)
+        # TextGeneration (stream)
+        print("{:=^50}".format("TextGeneration (stream)"))
+        response_tgs = client.post_completion_stream(
+            request_data=request_payload,
+        )
+        for chunk_response in response_tgs:
+            print(chunk_response.alternatives[0].message.text)
         # TextGenerationAsync
+        print("{:=^50}".format("TextGenerationAsync"))
         operation_tga: Operation = client.post_completion_async(
             request_data=request_payload,
         )
         print(f"Operation ID: {operation_tga.id}")
         response_tga: CompletionResponse = client.wait_for_completion(operation_tga.id)
-        print(response_tga.alternatives[0].message.text)
+        print(response_tga)
         # Tokenize
+        print("{:=^50}".format("Tokenize"))
         response_t: TokenizeResponse = client.post_tokenize(
             request_data=TokenizeRequest(
                 modelUri=f"gpt://{folder_id}/{ModelURI.YANDEX_GPT.value}",
                 text="Ты - Саратов",
             ),
         )
-        print(response_t.tokens)
+        print(response_t)
         # TokenizeCompletion
+        print("{:=^50}".format("TokenizeCompletion"))
         response_tc: TokenizeResponse = client.post_tokenize_completion(
             request_data=request_payload,
         )
-        print(response_tc.tokens)
+        print(response_tc)
