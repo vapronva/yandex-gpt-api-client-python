@@ -8,6 +8,8 @@ from .models import (
     CompletionRequest,
     CompletionResponse,
     Operation,
+    TokenizeRequest,
+    TokenizeResponse,
 )
 
 
@@ -81,3 +83,22 @@ class YandexLLMClient:
                 )
                 raise RuntimeError(msg)
             time.sleep(poll_interval)
+
+    def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
+        response: Response = self._client.post(
+            url=APIEndpoints.TOKENIZE,
+            json=request_data.model_dump(mode="python"),
+        )
+        response.raise_for_status()
+        return TokenizeResponse(**response.json())
+
+    def post_tokenize_completion(
+        self,
+        request_data: CompletionRequest,
+    ) -> TokenizeResponse:
+        response: Response = self._client.post(
+            url=APIEndpoints.TOKENIZE_COMPLETION,
+            json=request_data.model_dump(mode="python"),
+        )
+        response.raise_for_status()
+        return TokenizeResponse(**response.json())

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Message(BaseModel):
@@ -49,3 +49,19 @@ class Operation(BaseModel):
     metadata: dict | None = None
     error: dict | None = None
     response: CompletionResponse | None = None
+
+
+class TokenizeRequest(BaseModel):
+    modelUri: str
+    text: str
+
+
+class Token(BaseModel):
+    id_: str = Field(alias="id")
+    text: str
+    special: bool
+
+
+class TokenizeResponse(BaseModel):
+    tokens: list[Token]
+    modelVersion: str
