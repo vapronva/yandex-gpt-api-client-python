@@ -5,7 +5,7 @@ from typing import Any, Generator
 from httpx import Client, Response
 from pydantic import BaseModel
 
-from .config import APIEndpoints
+from .config import APIEndpointsV1
 from .models import (
     CompletionAPIResponse,
     CompletionRequest,
@@ -79,19 +79,20 @@ class YandexLLMClient:
         request_data.completionOptions.stream = False
         response: Response = self._make_request(
             method="post",
-            url=APIEndpoints.TEXTGENERATION,
+            url=APIEndpointsV1.TEXT_GENERATION,
             request_data=request_data,
         )
         parsed_response = CompletionAPIResponse(**response.json())
         return parsed_response.result
 
     def post_completion_stream(
-        self, request_data: CompletionRequest,
+        self,
+        request_data: CompletionRequest,
     ) -> Generator[CompletionResponse, None, None]:
         request_data.completionOptions.stream = True
         response: Generator[str, None, None] = self._make_stream_request(
             method="post",
-            url=APIEndpoints.TEXTGENERATION,
+            url=APIEndpointsV1.TEXT_GENERATION,
             request_data=request_data,
         )
         for chunk in response:
@@ -101,7 +102,7 @@ class YandexLLMClient:
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
         response: Response = self._make_request(
             method="post",
-            url=APIEndpoints.TEXTGENERATION_ASYNC,
+            url=APIEndpointsV1.TEXT_GENERATION_ASYNC,
             request_data=request_data,
         )
         return Operation(**response.json())
@@ -109,7 +110,7 @@ class YandexLLMClient:
     def get_operation_status(self, operation_id: str) -> Operation:
         response: Response = self._make_request(
             method="get",
-            url=APIEndpoints.OPERATIONS.format(operation_id=operation_id),
+            url=APIEndpointsV1.OPERATIONS.format(operation_id=operation_id),
         )
         return Operation(**response.json())
 
@@ -132,7 +133,7 @@ class YandexLLMClient:
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
         response: Response = self._make_request(
             method="post",
-            url=APIEndpoints.TOKENIZE,
+            url=APIEndpointsV1.TOKENIZE,
             request_data=request_data,
         )
         return TokenizeResponse(**response.json())
@@ -143,7 +144,7 @@ class YandexLLMClient:
     ) -> TokenizeResponse:
         response: Response = self._make_request(
             method="post",
-            url=APIEndpoints.TOKENIZE_COMPLETION,
+            url=APIEndpointsV1.TOKENIZE_COMPLETION,
             request_data=request_data,
         )
         return TokenizeResponse(**response.json())

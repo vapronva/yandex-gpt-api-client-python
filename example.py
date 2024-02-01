@@ -1,6 +1,6 @@
 import os
 
-from yandexgptapi.config import ModelURI
+from yandexgptapi.config import GenerativeModelURI
 from yandexgptapi.models import (
     CompletionOptions,
     CompletionRequest,
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     iam_token: str = os.getenv("YANDEX_CLOUD_IAM_TOKEN", "")
     folder_id: str = os.getenv("YANDEX_CLOUD_FOLDER_ID", "")
     request_payload = CompletionRequest(
-        modelUri=f"gpt://{folder_id}/{ModelURI.YANDEX_GPT.value}",
+        modelUri=GenerativeModelURI.YANDEX_GPT.value.format(folder_id=folder_id),
         completionOptions=CompletionOptions(
             temperature=0.6,
             maxTokens=256,
@@ -58,7 +58,9 @@ if __name__ == "__main__":
         print("{:=^50}".format("Tokenize"))
         response_t: TokenizeResponse = client.post_tokenize(
             request_data=TokenizeRequest(
-                modelUri=f"gpt://{folder_id}/{ModelURI.YANDEX_GPT.value}",
+                modelUri=GenerativeModelURI.YANDEX_GPT.value.format(
+                    folder_id=folder_id
+                ),
                 text="Ты - Саратов",
             ),
         )
