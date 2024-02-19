@@ -28,15 +28,15 @@ class YandexLLMClient:
     -------
         __enter__: Context management method to initialize the httpx client.
         __exit__: Context management method to close the httpx client.
-        _make_request: Makes an API request and returns the response. Note: hidden method.
-        _make_stream_request: Makes a streaming API request and yields the response. Note: hidden method.
-        post_completion: Makes a POST request to the text generation endpoint and returns the response.
-        post_completion_stream: Makes a streaming POST request to the text generation endpoint and yields the response.
-        post_completion_async: Makes an asynchronous POST request to the text generation endpoint and returns the operation.
-        get_operation_status: Gets the status of an operation.
-        wait_for_completion: Waits for an operation to complete and returns the response.
-        post_tokenize: Makes a POST request to the tokenize endpoint and returns the response.
-        post_tokenize_completion: Makes a POST request to the tokenize completion endpoint and returns the response.
+        _make_request: Make an API request and returns the response. Note: hidden method.
+        _make_stream_request: Make a streaming API request and yields the response. Note: hidden method.
+        post_completion: Make a POST request to the text generation endpoint and returns the response.
+        post_completion_stream: Make a streaming POST request to the text generation endpoint and yields the response.
+        post_completion_async: Make an asynchronous POST request to the text generation endpoint and returns the operation.
+        get_operation_status: Get the status of an operation.
+        wait_for_completion: Wait for an operation to complete and returns the response.
+        post_tokenize: Make a POST request to the tokenize endpoint and returns the response.
+        post_tokenize_completion: Make a POST request to the tokenize completion endpoint and returns the response.
 
     """
 
@@ -48,7 +48,7 @@ class YandexLLMClient:
         data_logging_enabled: bool = False,
         **kwargs,
     ) -> None:
-        """Initializes the YandexLLMClient with the provided parameters.
+        """Initialize the YandexLLMClient with the provided parameters.
 
         Args:
         ----
@@ -66,11 +66,14 @@ class YandexLLMClient:
 
         """
         if not iam_token and not api_key:
-            raise ValueError("Either iam_token or api_key must be provided")
+            msg = "Either iam_token or api_key must be provided"
+            raise ValueError(msg)
         if not folder_id and iam_token:
-            raise ValueError("folder_id is required when using iam_token")
+            msg = "folder_id is required when using iam_token"
+            raise ValueError(msg)
         if iam_token and api_key:
-            raise ValueError("Only one of iam_token or api_key must be provided")
+            msg = "Only one of iam_token or api_key must be provided"
+            raise ValueError(msg)
         self._headers: dict[str, str] = {
             "x-folder-id": f"{folder_id}",
             "x-data-logging-enabled": "true" if data_logging_enabled else "false",
@@ -124,7 +127,7 @@ class YandexLLMClient:
         url: str,
         request_data: BaseModel | None = None,
     ) -> Response:
-        """Makes an API request and returns the response.
+        """Make an API request and returns the response.
 
         Args:
         ----
@@ -154,7 +157,7 @@ class YandexLLMClient:
         url: str,
         request_data: BaseModel | None = None,
     ) -> Generator[str, None, None]:
-        """Makes a streaming API request and yields the response.
+        """Make a streaming API request and yields the response.
 
         Args:
         ----
@@ -177,7 +180,7 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> CompletionResponse:
-        """Makes a POST request to the text generation endpoint and returns the response.
+        """Make a POST request to the text generation endpoint and returns the response.
 
         Args:
         ----
@@ -205,7 +208,7 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> Generator[CompletionResponse, None, None]:
-        """Makes a streaming POST request to the text generation endpoint and yields the response.
+        """Make a streaming POST request to the text generation endpoint and yields the response.
 
         Args:
         ----
@@ -231,7 +234,7 @@ class YandexLLMClient:
             yield parsed_response.result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
-        """Makes an syncronous "async" POST request to the text generation endpoint and returns the operation. Note: this method is created for low priority requests and can take "some time" to complete, in exchange for "beter quality" and lower prices.
+        """Make an syncronous "async" POST request to the text generation endpoint and returns the operation. Note: this method is created for low priority requests and can take "some time" to complete, in exchange for "beter quality" and lower prices.
 
         Args:
         ----
@@ -254,7 +257,7 @@ class YandexLLMClient:
         return Operation(**response.json())
 
     def get_operation_status(self, operation_id: str) -> Operation:
-        """Gets the status of an operation.
+        """Get the status of an operation.
 
         Args:
         ----
@@ -280,7 +283,7 @@ class YandexLLMClient:
         operation_id: str,
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
-        """Waits for an operation to complete and returns the response. It polls the operation status at regular intervals until the operation is done. Note: this method is a blocking operation by design.
+        """Wait for an operation to complete and returns the response. It polls the operation status at regular intervals until the operation is done. Note: this method is a blocking operation by design.
 
         Args:
         ----
@@ -308,7 +311,7 @@ class YandexLLMClient:
             time.sleep(poll_interval)
 
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
-        """Makes a POST request to the tokenize endpoint and returns the response.
+        """Make a POST request to the tokenize endpoint and returns the response.
 
         Args:
         ----
@@ -334,7 +337,7 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> TokenizeResponse:
-        """Makes a POST request to the tokenize completion endpoint and returns the response. Note: this method is designed to be a drop-in replacement for the `PostCompletion` method.
+        """Make a POST request to the tokenize completion endpoint and returns the response. Note: this method is designed to be a drop-in replacement for the `PostCompletion` method.
 
         Args:
         ----

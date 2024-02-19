@@ -13,7 +13,7 @@ class AlternativeStatus(StrEnum):
         ALTERNATIVE_STATUS_UNSPECIFIED: The status of the alternative is unspecified.
         ALTERNATIVE_STATUS_PARTIAL: The alternative is a partial response.
         ALTERNATIVE_STATUS_TRUNCATED_FINAL: The alternative is a final response, but it is truncated.
-        ALTERNATIVE_STATUS_FINAL: The alternative is a final response. 
+        ALTERNATIVE_STATUS_FINAL: The alternative is a final response.
 
     """
 
@@ -111,7 +111,7 @@ class Usage(BaseModel):
     ----------
         inputTextTokens: int — The number of tokens in the input text.
         completionTokens: int — The number of tokens in the completion.
-        totalTokens: int — The total number of tokens used. 
+        totalTokens: int — The total number of tokens used.
 
     """
 

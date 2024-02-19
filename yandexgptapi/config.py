@@ -34,8 +34,7 @@ class EmbeddingModelURI(StrEnum):
 
 
 class APIEndpointsV1(StrEnum):
-    """The API endpoints for the Yandex GPT API.
-    """
+    """The API endpoints for the Yandex GPT API."""
 
     TEXT_GENERATION = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     TEXT_GENERATION_ASYNC = "https://llm.api.cloud.yandex.net/foundationModels/v1/completionAsync"
