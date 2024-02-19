@@ -19,15 +19,20 @@ from .models import (
 class YandexLLMClient:
     def __init__(
         self,
-        iam_token: str,
         folder_id: str,
+        iam_token: str | None = None,
+        api_key: str | None = None,
         data_logging_enabled: bool = False,
         **kwargs,
     ) -> None:
+        if not iam_token and not api_key:
+            raise ValueError("Either iam_token or api_key must be provided")
+        if iam_token and api_key:
+            raise ValueError("Only one of iam_token or api_key must be provided")
         self._headers: dict[str, str] = {
-            "Authorization": f"Bearer {iam_token}",
             "x-folder-id": f"{folder_id}",
             "x-data-logging-enabled": "true" if data_logging_enabled else "false",
+            "Authorization": f"Api-Key {api_key}" if api_key else f"Bearer {iam_token}",
         }
         self._httpx_client_options = kwargs
 
