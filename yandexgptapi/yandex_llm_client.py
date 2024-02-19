@@ -27,7 +27,7 @@ class YandexLLMClient:
         self._headers: dict[str, str] = {
             "Authorization": f"Bearer {iam_token}",
             "x-folder-id": f"{folder_id}",
-            "x-data-logging-enabled": "false" if not data_logging_enabled else "true",
+            "x-data-logging-enabled": "true" if data_logging_enabled else "false",
         }
         self._httpx_client_options = kwargs
 

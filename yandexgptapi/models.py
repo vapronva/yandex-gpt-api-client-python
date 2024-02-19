@@ -14,10 +14,7 @@ class AlternativeStatus(StrEnum):
     @classmethod
     def _missing_(cls, value: str) -> str | None:
         value = value.lower()
-        for member in cls:
-            if member == value:
-                return member
-        return None
+        return next((member for member in cls if member == value), None)
 
 
 class MessageRole(StrEnum):
