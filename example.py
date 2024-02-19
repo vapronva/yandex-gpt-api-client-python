@@ -32,7 +32,6 @@ if __name__ == "__main__":
     # auth with api key
     with YandexLLMClient(
         api_key=api_key,
-        folder_id=folder_id,
         timeout=10,
     ) as client:
         # TextGeneration
