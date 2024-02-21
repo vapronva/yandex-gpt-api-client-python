@@ -1,5 +1,5 @@
-import json
-import time
+from json import loads as json_loads
+from time import sleep
 from typing import Any, Generator
 
 from httpx import Client, Response
@@ -230,7 +230,7 @@ class YandexLLMClient:
             request_data=request_data,
         )
         for chunk in response:
-            parsed_response = CompletionAPIResponse(**json.loads(chunk))
+            parsed_response = CompletionAPIResponse(**json_loads(chunk))
             yield parsed_response.result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
@@ -308,7 +308,7 @@ class YandexLLMClient:
                     f"Operation #{operation_id} failed with error: {operation.error}"
                 )
                 raise RuntimeError(msg)
-            time.sleep(poll_interval)
+            sleep(poll_interval)
 
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
         """Make a POST request to the tokenize endpoint and returns the response.
