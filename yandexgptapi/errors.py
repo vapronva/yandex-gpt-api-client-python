@@ -2,6 +2,17 @@ from typing import Any
 
 
 class BaseYandexGPTAPIError(Exception):
+    """Base class for YandexGPT API errors.
+
+    Args
+    ----
+        - `grpc_code` (`int`): gRPC status code.
+        - `http_code` (`int`, optional): HTTP status code.
+        - `message` (`str`): Error message.
+        - `details` (`list[str]`): Error details.
+        - `solution` (`str`, optional): Proposed solution for the error.
+    """
+
     def __init__(
         self,
         grpc_code: int,
@@ -20,8 +31,9 @@ class BaseYandexGPTAPIError(Exception):
         return f"{self.grpc_code=} {self.http_code=} {self.message=} {self.details=} {self.solution=}"
 
 
-# this is not documented anywhere in the yandex cloud docs, but it did show up once in my testing, and i couldn't replicate it ever since (did not try edgy topics, though)
 class ProhibitedTopicError(BaseYandexGPTAPIError):
+    """Error raised when a prohibited topic is encountered."""
+
     def __init__(self) -> None:
         super().__init__(
             grpc_code=3,
@@ -33,6 +45,8 @@ class ProhibitedTopicError(BaseYandexGPTAPIError):
 
 
 class QuotaExceededError(BaseYandexGPTAPIError):
+    """Error raised when the quota is exceeded."""
+
     def __init__(self) -> None:
         super().__init__(
             grpc_code=8,

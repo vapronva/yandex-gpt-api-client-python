@@ -17,27 +17,26 @@ from .models import (
 
 
 class YandexLLMClient:
-    """Client for interacting with the Yandex Foundation Models API. This client supports various operations such as text generation, tokenization, and asynchronous operations (as in low priority requests with lowered prices that can take some time to complete).
+    """Client for Yandex Foundation Models API. Supports text generation, tokenization, and asynchronous operations.
 
     Attributes
     ----------
-        headers (dict[str, str]): The headers to be used in the API requests. Note: setting the headers updates the values in the client.
-        _httpx_client_options (dict): Additional options for the httpx client. Note: hidden attribute; pass these options as arguments to the client constructor.
+        - `headers` (`dict[str, str]`): API request headers (updated on setting)
+        - `_httpx_client_options` (`dict`): Extra options for httpx client. Hidden attribute; pass as constructor arguments.
 
     Methods
     -------
-        __enter__: Context management method to initialize the httpx client.
-        __exit__: Context management method to close the httpx client.
-        _make_request: Make an API request and returns the response. Note: hidden method.
-        _make_stream_request: Make a streaming API request and yields the response. Note: hidden method.
-        post_completion: Make a POST request to the text generation endpoint and returns the response.
-        post_completion_stream: Make a streaming POST request to the text generation endpoint and yields the response.
-        post_completion_async: Make an asynchronous POST request to the text generation endpoint and returns the operation.
-        get_operation_status: Get the status of an operation.
-        wait_for_completion: Wait for an operation to complete and returns the response.
-        post_tokenize: Make a POST request to the tokenize endpoint and returns the response.
-        post_tokenize_completion: Make a POST request to the tokenize completion endpoint and returns the response.
-
+        - `__enter__`: Initializes httpx client (for context management).
+        - `__exit__`: Closes httpx client (for context management).
+        - `_make_request`: Execute API request and returns response. Hidden method.
+        - `_make_stream_request`: Executes streaming API request and yields response. Hidden method.
+        - `post_completion`: Executes POST request to text generation endpoint and returns response.
+        - `post_completion_stream`: Executes streaming POST request to text generation endpoint and yields response.
+        - `post_completion_async`: Executes async POST request to text generation endpoint and returns operation.
+        - `get_operation_status`: Retrieves operation status.
+        - `wait_for_completion`: Waits for operation completion and returns response.
+        - `post_tokenize`: Executes POST request to tokenize endpoint and returns response.
+        - `post_tokenize_completion`: Executes POST request to tokenize completion endpoint and returns response.
     """
 
     def __init__(
@@ -48,22 +47,21 @@ class YandexLLMClient:
         data_logging_enabled: bool = False,
         **kwargs,
     ) -> None:
-        """Initialize the YandexLLMClient with the provided parameters.
+        """Initialize `YandexLLMClient`.
 
-        Args:
+        Args
         ----
-            folder_id (str, optional): The ID of the folder in Yandex Cloud. Required when using IAM token.
-            iam_token (str, optional): The IAM token for authentication.
-            api_key (str, optional): The API key for authentication.
-            data_logging_enabled (bool, optional): Whether data logging is enabled. Defaults to False.
-            **kwargs: Additional options for the httpx client.
+            - `folder_id` (`str`, optional): Yandex Cloud folder ID. Required with IAM token.
+            - `iam_token` (`str`, optional): IAM token for authentication.
+            - `api_key` (`str`, optional): API key for authentication.
+            - `data_logging_enabled` (`bool`, optional): Enables data logging (on the Yandex's side). Defaults to `False`.
+            - `**kwargs`: Additional httpx client options.
 
-        Raises:
+        Raises
         ------
-            ValueError: If neither iam_token nor api_key is provided.
-            ValueError: If folder_id is not provided when using iam_token.
-            ValueError: If both iam_token and api_key are provided.
-
+            - `ValueError`: If neither `iam_token` nor `api_key` is provided.
+            - `ValueError`: If `folder_id` is not provided when using `iam_token`.
+            - `ValueError`: If both `iam_token` and `api_key` are provided.
         """
         if not iam_token and not api_key:
             msg = "Either iam_token or api_key must be provided"
@@ -84,39 +82,36 @@ class YandexLLMClient:
         self._httpx_client_options = kwargs or {}
 
     def __enter__(self) -> "YandexLLMClient":
-        """Context management method to initialize the httpx client.
+        """Initialize httpx client (for context management).
 
         Returns
         -------
-            YandexLLMClient: The instance of the client.
-
+            `YandexLLMClient`: The client instance.
         """
         self._client = Client(headers=self._headers, **self._httpx_client_options)
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
-        """Context management method to close the httpx client."""
+        """Close the httpx client (for context management)."""
         self._client.close()
 
     @property
     def headers(self) -> dict[str, str]:
-        """Getter for the headers attribute.
+        """Return the headers used in API requests.
 
         Returns
         -------
-            dict[str, str]: The headers used in the API requests.
-
+            `dict[str, str]`: The headers.
         """
         return self._headers
 
     @headers.setter
     def headers(self, new_headers: dict[str, str]) -> None:
-        """Setter for the headers attribute. Updates the headers in the client.
+        """Update the headers in the client.
 
-        Args:
+        Args
         ----
-            new_headers (dict[str, str]): The new headers to be used in the API requests.
-
+            - `new_headers` (`dict[str, str]`): The new headers.
         """
         self._headers = new_headers
         self._client.headers.update(new_headers)
@@ -127,22 +122,21 @@ class YandexLLMClient:
         url: str,
         request_data: BaseModel | None = None,
     ) -> Response:
-        """Make an API request and returns the response.
+        """Make an API request and return the response.
 
-        Args:
+        Args
         ----
-            method (str): The HTTP method to use for the request. Corresponds to the method of the httpx client.
-            url (str): The URL to send the request to.
-            request_data (BaseModel, optional): The data to send in the request. Will be serialized to Python's built-in dict to later be serialized to JSON in httpx. Defaults to None.
+            - `method` (`str`): HTTP method for the request.
+            - `url` (`str`): Request URL.
+            - `request_data` (`BaseModel`, optional): Data to send in the request.
 
-        Returns:
+        Returns
         -------
-            Response: The response from the API.
+            `Response`: API response.
 
-        Raises:
+        Raises
         ------
-            Whatever exceptions are raised by the httpx client.
-
+            Any exceptions raised by the httpx client itself.
         """
         request_args: dict[str, Any] = {"url": url}
         if request_data:
@@ -157,18 +151,17 @@ class YandexLLMClient:
         url: str,
         request_data: BaseModel | None = None,
     ) -> Generator[str, None, None]:
-        """Make a streaming API request and yields the response.
+        """Make a streaming API request and yield the response.
 
-        Args:
+        Args
         ----
-            method (str): The HTTP method to use for the request. Corresponds to the method of the httpx client.
-            url (str): The URL to send the request to.
-            request_data (BaseModel, optional): The data to send in the request. Will be serialized to Python's built-in dict to later be serialized to JSON in httpx. Defaults to None.
+            - `method` (`str`): HTTP method for the request.
+            - `url` (`str`): Request URL.
+            - `request_data` (`BaseModel`, optional): Data to send in the request.
 
-        Yields:
+        Yields
         ------
-            str: The response from the API.
-
+            `str`: API response.
         """
         request_args: dict[str, Any] = {"url": url}
         if request_data:
@@ -180,20 +173,19 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> CompletionResponse:
-        """Make a POST request to the text generation endpoint and returns the response.
+        """Make a POST request to the text generation endpoint.
 
-        Args:
+        Args
         ----
-            request_data (CompletionRequest): The data to send in the request (includes model URI, completion options (such as temperature and max tokens), and messages to generate text from).
+            - `request_data` (`CompletionRequest`): Request data.
 
-        Returns:
+        Returns
         -------
-            CompletionResponse: The response from the API (includes generated text, usage, and model version).
+            `CompletionResponse`: API response.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion
-
+            [cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion](https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion)
         """
         request_data.completionOptions.stream = False
         response: Response = self._make_request(
@@ -208,20 +200,19 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> Generator[CompletionResponse, None, None]:
-        """Make a streaming POST request to the text generation endpoint and yields the response.
+        """Make a streaming POST request to the text generation endpoint.
 
-        Args:
+        Args
         ----
-            request_data (CompletionRequest): The data to send in the request (includes model URI, completion options (such as temperature and max tokens), and messages to generate text from). Note: it sets the stream option to True in the request data in any case.
+            - `request_data` (`CompletionRequest`): Request data.
 
-        Yields:
+        Yields
         ------
-            CompletionResponse: The response from the API (includes generated text (partially or fully), usage, and model version).
+            `CompletionResponse`: API response.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion
-
+            [cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion](https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion)
         """
         request_data.completionOptions.stream = True
         response: Generator[str, None, None] = self._make_stream_request(
@@ -234,20 +225,20 @@ class YandexLLMClient:
             yield parsed_response.result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
-        """Make an syncronous "async" POST request to the text generation endpoint and returns the operation. Note: this method is created for low priority requests and can take "some time" to complete, in exchange for "beter quality" and lower prices.
+        """Make an async POST request to the text generation endpoint.
+        Note: this method is designed for low priority requests and can take "some time" to complete, in exchange for "beter quality" and lower prices.
 
-        Args:
+        Args
         ----
-            request_data (CompletionRequest): The data to send in the request (includes model URI, completion options (such as temperature and max tokens), and messages to generate text from).
+            - `request_data` (`CompletionRequest`): Request data.
 
-        Returns:
+        Returns
         -------
-            Operation: The operation from the API (includes ID, description, creation and modification times, status, metadata (optional), error (optional), and response (optional)).
+            `Operation`: API operation.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion
-
+            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
         """
         response: Response = self._make_request(
             method="post",
@@ -259,18 +250,17 @@ class YandexLLMClient:
     def get_operation_status(self, operation_id: str) -> Operation:
         """Get the status of an operation.
 
-        Args:
+        Args
         ----
-            operation_id (str): The ID of the operation.
+            - `operation_id` (`str`): Operation ID.
 
-        Returns:
+        Returns
         -------
-            Operation: The operation from the API (includes ID, description, creation and modification times, status, metadata (optional), error (optional), and response (optional)).
+            `Operation`: API operation.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion
-
+            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
         """
         response: Response = self._make_request(
             method="get",
@@ -283,21 +273,21 @@ class YandexLLMClient:
         operation_id: str,
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
-        """Wait for an operation to complete and returns the response. It polls the operation status at regular intervals until the operation is done. Note: this method is a blocking operation by design.
+        """Wait for an operation to complete and return the response.
+        Note: this method is a blocking operation by design.
 
-        Args:
+        Args
         ----
-            operation_id (str): The ID of the operation.
-            poll_interval (float, optional): The interval in seconds between each poll. Defaults to 1.0.
+            `operation_id` (`str`): Operation ID.
+            `poll_interval` (`float`, optional): Polling interval in seconds. Defaults to `1.0`.
 
-        Returns:
+        Returns
         -------
-            CompletionResponse: The response from the API (includes generated text, usage, and model version).
+            `CompletionResponse`: API response.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion
-
+            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
         """
         while True:
             operation: Operation = self.get_operation_status(operation_id)
@@ -311,20 +301,19 @@ class YandexLLMClient:
             sleep(poll_interval)
 
     def post_tokenize(self, request_data: TokenizeRequest) -> TokenizeResponse:
-        """Make a POST request to the tokenize endpoint and returns the response.
+        """Make a POST request to the tokenize endpoint.
 
-        Args:
+        Args
         ----
-            request_data (TokenizeRequest): The data to send in the request (includes model URI and text to tokenize).
+            - `request_data` (`TokenizeRequest`): Request data.
 
-        Returns:
+        Returns
         -------
-            TokenizeResponse: The response from the API (includes tokens and model version).
+            `TokenizeResponse`: API response.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenize
-
+            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenize](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenize)
         """
         response: Response = self._make_request(
             method="post",
@@ -337,20 +326,19 @@ class YandexLLMClient:
         self,
         request_data: CompletionRequest,
     ) -> TokenizeResponse:
-        """Make a POST request to the tokenize completion endpoint and returns the response. Note: this method is designed to be a drop-in replacement for the `PostCompletion` method.
+        """Make a POST request to the tokenize completion endpoint.
 
-        Args:
+        Args
         ----
-            request_data (CompletionRequest): The data to send in the request (includes model URI, completion options (such as temperature and max tokens), and messages to generate text from). Note: it uses only model information and messages from the request data.
+            - `request_data` (`CompletionRequest`): Request data.
 
-        Returns:
+        Returns
         -------
-            TokenizeResponse: The response from the API (includes tokens and model version).
+            `TokenizeResponse`: API response.
 
-        Implements:
+        Implements
         -----------
-            https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenizeCompletion
-
+            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenizeCompletion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenizeCompletion)
         """
         response: Response = self._make_request(
             method="post",

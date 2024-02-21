@@ -2,15 +2,14 @@ from enum import StrEnum
 
 
 class GenerativeModelURI(StrEnum):
-    """The URI for the generative model.
+    """Enum for URIs of generative models.
 
     Attributes
     ----------
-        YANDEX_GPT: The URI for the Yandex GPT model.
-        YANDEX_GPT_LITE: The URI for the Yandex GPT Lite model.
-        SUMMARIZATION: The URI for the summarization model (based on the Yandex GPT Lite model).
-        FINETUNED_DATASPHERE: The URI for the finetuned in the DataSphere model.
-
+        - `YANDEX_GPT`: URI for Yandex GPT model.
+        - `YANDEX_GPT_LITE`: URI for Yandex GPT Lite model.
+        - `SUMMARIZATION`: URI for summarization model.
+        - `FINETUNED_DATASPHERE`: URI for finetuned DataSphere model.
     """
 
     YANDEX_GPT = "gpt://{folder_id}/yandexgpt/latest"
@@ -20,13 +19,12 @@ class GenerativeModelURI(StrEnum):
 
 
 class EmbeddingModelURI(StrEnum):
-    """The URI for the embedding model.
+    """Enum for URIs of embedding models.
 
     Attributes
     ----------
-        TEXT_EMBEDDING: The URI for the text embedding model (for search queries).
-        EMBEDDING_SEARCH_QUERY: The URI for the text embedding model (for knowledge bases and other documentation).
-
+        - `TEXT_EMBEDDING`: URI for text embedding model for search queries.
+        - `EMBEDDING_SEARCH_QUERY`: URI for text embedding model for knowledge bases and documentation.
     """
 
     EMBEDDING_SEARCH_QUERY = "emb://{folder_id}/text-search-query/latest"
@@ -34,7 +32,17 @@ class EmbeddingModelURI(StrEnum):
 
 
 class APIEndpointsV1(StrEnum):
-    """The API endpoints for the Yandex GPT API."""
+    """Enum for endpoints of Yandex GPT API.
+
+    Attributes
+    ----------
+        - `TEXT_GENERATION`: Endpoint for text generation.
+        - `TEXT_GENERATION_ASYNC`: Endpoint for asynchronous text generation.
+        - `OPERATIONS`: Endpoint for operations.
+        - `TOKENIZE`: Endpoint for tokenization.
+        - `TOKENIZE_COMPLETION`: Endpoint for tokenization completion.
+        - `TEXT_EMBEDDING`: Endpoint for text embedding.
+    """
 
     TEXT_GENERATION = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     TEXT_GENERATION_ASYNC = "https://llm.api.cloud.yandex.net/foundationModels/v1/completionAsync"
