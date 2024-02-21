@@ -1,6 +1,7 @@
 from os import getenv
 from time import sleep
 
+from yandexgptapi import YandexLLMClient
 from yandexgptapi.config import GenerativeModelURI
 from yandexgptapi.models import (
     CompletionOptions,
@@ -12,7 +13,6 @@ from yandexgptapi.models import (
     TokenizeRequest,
     TokenizeResponse,
 )
-from yandexgptapi.yandex_llm_client import YandexLLMClient
 
 if __name__ == "__main__":
     iam_token: str = getenv("YANDEX_CLOUD_IAM_TOKEN", "")
