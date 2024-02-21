@@ -1,5 +1,8 @@
 from os import getenv
 from time import sleep
+from typing import Any
+
+from pydantic import NonNegativeFloat, PositiveInt
 
 from yandexgptapi import YandexLLMClient
 from yandexgptapi.config import GenerativeModelURI
@@ -14,78 +17,93 @@ from yandexgptapi.models import (
     TokenizeResponse,
 )
 
-if __name__ == "__main__":
-    iam_token: str = getenv("YANDEX_CLOUD_IAM_TOKEN", "")
-    api_key: str = getenv("YANDEX_CLOUD_API_KEY", "")
-    folder_id: str = getenv("YANDEX_CLOUD_FOLDER_ID", "")
+
+WAIT_TIME: NonNegativeFloat = 1.5
+TEMPERATURE: NonNegativeFloat = 0.6
+MAX_TOKENS: PositiveInt = 256
+TIMEOUT: NonNegativeFloat = 10.0
+
+YC_IAM_TOKEN: str = getenv("YANDEX_CLOUD_IAM_TOKEN", "")
+YC_API_KEY: str = getenv("YANDEX_CLOUD_API_KEY", "")
+YC_FOLDER_ID: str = getenv("YANDEX_CLOUD_FOLDER_ID", "")
+
+
+def pr_resp_wait(response: Any) -> None:
+    print(f"{type(response)}: {response}")
+    sleep(WAIT_TIME)
+
+
+def print_section(section_name: str) -> None:
+    print(f"{section_name:=^50}")
+
+
+def test_all_api_endpoints(
+    client: YandexLLMClient,
+    request_payload: CompletionRequest,
+) -> None:
+    print_section("TextGeneration")
+    response: CompletionResponse = client.post_completion(
+        request_data=request_payload,
+    )
+    pr_resp_wait(response)
+    print_section("TextGeneration (stream)")
+    response_stream = client.post_completion_stream(request_data=request_payload)
+    for chunk_response in response_stream:
+        print(chunk_response.alternatives[0].message.text)
+    sleep(WAIT_TIME)
+    print_section("TextGenerationAsync")
+    operation: Operation = client.post_completion_async(
+        request_data=request_payload,
+    )
+    print(f"Received opeation ID: {operation.id}")
+    response_async: CompletionResponse = client.wait_for_completion(operation.id)
+    pr_resp_wait(response_async)
+    print_section("Tokenize")
+    response_tokenize: TokenizeResponse = client.post_tokenize(
+        request_data=TokenizeRequest(
+            modelUri=GenerativeModelURI.YANDEX_GPT.value.format(
+                folder_id=YC_FOLDER_ID,
+            ),
+            text="Ты - Саратов",
+        ),
+    )
+    pr_resp_wait(response_tokenize)
+    print_section("TokenizeCompletion")
+    response_tokenize_completion: TokenizeResponse = client.post_tokenize_completion(
+        request_data=request_payload,
+    )
+    pr_resp_wait(response_tokenize_completion)
+
+
+def main() -> None:
     request_payload = CompletionRequest(
-        modelUri=GenerativeModelURI.YANDEX_GPT_LITE.value.format(folder_id=folder_id),
+        modelUri=GenerativeModelURI.YANDEX_GPT_LITE.value.format(
+            folder_id=YC_FOLDER_ID,
+        ),
         completionOptions=CompletionOptions(
-            temperature=0.6,
-            maxTokens=256,
+            temperature=TEMPERATURE,
+            maxTokens=MAX_TOKENS,
         ),
         messages=[
             Message(role=MessageRole.SYSTEM, text="Ты - Саратов"),
-            Message(role=MessageRole.SYSTEM, text="Кто?"),
+            Message(role=MessageRole.USER, text="Кто?"),
         ],
     )
-    # auth with api key
+    print_section("Auth with API Key")
+    with YandexLLMClient(api_key=YC_API_KEY) as client:
+        print_section("TextGeneration (API Key)")
+        response: CompletionResponse = client.post_completion(
+            request_data=request_payload,
+        )
+        pr_resp_wait(response)
+    print_section("Auth with IAM Token")
     with YandexLLMClient(
-        api_key=api_key,
+        folder_id=YC_FOLDER_ID,
+        iam_token=YC_IAM_TOKEN,
         timeout=10,
     ) as client:
-        # TextGeneration
-        print("{:=^50}".format("TextGeneration (API Key)"))
-        response_tg: CompletionResponse = client.post_completion(
-            request_data=request_payload,
-        )
-        print(response_tg)
-        sleep(2)
-    # auth with iam token
-    with YandexLLMClient(
-        iam_token=iam_token,
-        folder_id=folder_id,
-        timeout=10,
-    ) as client:
-        # TextGeneration
-        print("{:=^50}".format("TextGeneration"))
-        response_tg: CompletionResponse = client.post_completion(
-            request_data=request_payload,
-        )
-        print(response_tg)
-        sleep(2)
-        # TextGeneration (stream)
-        print("{:=^50}".format("TextGeneration (stream)"))
-        response_tgs = client.post_completion_stream(
-            request_data=request_payload,
-        )
-        for chunk_response in response_tgs:
-            print(chunk_response.alternatives[0].message.text)
-        sleep(2)
-        # TextGenerationAsync
-        print("{:=^50}".format("TextGenerationAsync"))
-        operation_tga: Operation = client.post_completion_async(
-            request_data=request_payload,
-        )
-        print(f"Operation ID: {operation_tga.id}")
-        response_tga: CompletionResponse = client.wait_for_completion(operation_tga.id)
-        print(response_tga)
-        sleep(2)
-        # Tokenize
-        print("{:=^50}".format("Tokenize"))
-        response_t: TokenizeResponse = client.post_tokenize(
-            request_data=TokenizeRequest(
-                modelUri=GenerativeModelURI.YANDEX_GPT.value.format(
-                    folder_id=folder_id,
-                ),
-                text="Ты - Саратов",
-            ),
-        )
-        print(response_t)
-        sleep(2)
-        # TokenizeCompletion
-        print("{:=^50}".format("TokenizeCompletion"))
-        response_tc: TokenizeResponse = client.post_tokenize_completion(
-            request_data=request_payload,
-        )
-        print(response_tc)
+        test_all_api_endpoints(client, request_payload)
+
+
+if __name__ == "__main__":
+    main()
