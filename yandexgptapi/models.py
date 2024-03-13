@@ -15,12 +15,14 @@ class AlternativeStatus(StrEnum):
         - `ALTERNATIVE_STATUS_PARTIAL`: Partial response.
         - `ALTERNATIVE_STATUS_TRUNCATED_FINAL`: Final but truncated response.
         - `ALTERNATIVE_STATUS_FINAL`: Final response.
+        - `ALTERNATIVE_STATUS_CONTENT_FILTER`: Response was filtered.
     """
 
     ALTERNATIVE_STATUS_UNSPECIFIED = auto()
     ALTERNATIVE_STATUS_PARTIAL = auto()
     ALTERNATIVE_STATUS_TRUNCATED_FINAL = auto()
     ALTERNATIVE_STATUS_FINAL = auto()
+    ALTERNATIVE_STATUS_CONTENT_FILTER = auto()
 
     @classmethod
     def _missing_(cls, value: str) -> str | None:
