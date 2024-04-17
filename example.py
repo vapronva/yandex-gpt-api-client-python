@@ -4,9 +4,9 @@ from typing import Any
 
 from pydantic import NonNegativeFloat, PositiveInt
 
-from yandexgptapi import YandexLLMClient
-from yandexgptapi.config import GenerativeModelURI
-from yandexgptapi.models import (
+from yafma import YandexGPTClient
+from yafma.config import GenerativeModelURI
+from yafma.models import (
     CompletionOptions,
     CompletionRequest,
     CompletionResponse,
@@ -38,7 +38,7 @@ def print_section(section_name: str) -> None:
 
 
 def test_all_api_endpoints(
-    client: YandexLLMClient,
+    client: YandexGPTClient,
     request_payload: CompletionRequest,
 ) -> None:
     print_section("TextGeneration")
@@ -90,14 +90,14 @@ def main() -> None:
         ],
     )
     print_section("Auth with API Key")
-    with YandexLLMClient(api_key=YC_API_KEY) as client:
+    with YandexGPTClient(api_key=YC_API_KEY) as client:
         print_section("TextGeneration (API Key)")
         response: CompletionResponse = client.post_completion(
             request_data=request_payload,
         )
         pr_resp_wait(response)
     print_section("Auth with IAM Token")
-    with YandexLLMClient(
+    with YandexGPTClient(
         folder_id=YC_FOLDER_ID,
         iam_token=YC_IAM_TOKEN,
         timeout=10,

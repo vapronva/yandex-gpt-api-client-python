@@ -3,30 +3,35 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "yandex-gpt-api-client"
-version = "0.4.3"
-description = "Synchronous (async) client for Yandex's large language models API. Fire off long-running text generation tasks without sweating the wait."
+name = "yandex-foundation-models-api-client"
+version = "0.5.0"
+description = "Synchronous (with “async” support) client for Yandex's Foundation Models API (YandexGPT and YandexART). Fire off long-running “AI” generation tasks without sweating the wait."
 authors = [{ name = "Vladimir (vapronva)", email = "git@vprw.ru" }]
 requires-python = ">= 3.12"
 license = { file = "LICENSE" }
 dependencies = [
-  "httpx>=0.26,<1",
+  "httpx>=0.25,<1",
   "pydantic>=2,<3",
-  "typing_extensions>=4.9,<5",
+  "typing_extensions>=4,<5",
+  "pillow>=10,<11",
 ]
 keywords = [
-  "yandex gpt",
+  "yandex foundation models",
   "rest api client",
   "yandex cloud",
+  "yandexgpt",
+  "yandexart",
 ]
 classifiers = [
   "Programming Language :: Python :: 3.12",
-  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
   "Operating System :: OS Independent",
+  "Typing :: Typed",
+  "Development Status :: 2 - Pre-Alpha",
 ]
 
 [project.urls]
-Homepage = "https://gl.vprw.ru/vapronva/yandex-gpt-api-client-python"
+Homepage = "https://gl.vprw.ru/vapronva/yandex-foundation-models-api-client-python"
 
 [tool.setuptools]
-packages = ["yandexgptapi"]
+packages = ["yafma"]

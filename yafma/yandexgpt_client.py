@@ -16,7 +16,7 @@ from .models import (
 )
 
 
-class YandexLLMClient:
+class YandexGPTClient:
     """Client for Yandex Foundation Models API. Supports text generation, tokenization, and asynchronous operations.
 
     Attributes
@@ -47,7 +47,7 @@ class YandexLLMClient:
         data_logging_enabled: bool = False,
         **kwargs,
     ) -> None:
-        """Initialize `YandexLLMClient`.
+        """Initialize `YandexGPTClient`.
 
         Args
         ----
@@ -81,12 +81,12 @@ class YandexLLMClient:
             self._headers.pop("x-folder-id")
         self._httpx_client_options = kwargs or {}
 
-    def __enter__(self) -> "YandexLLMClient":
+    def __enter__(self) -> "YandexGPTClient":
         """Initialize httpx client (for context management).
 
         Returns
         -------
-            `YandexLLMClient`: The client instance.
+            `YandexGPTClient`: The client instance.
         """
         self._client = Client(headers=self._headers, **self._httpx_client_options)
         return self
