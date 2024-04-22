@@ -269,7 +269,7 @@ class Token(BaseModel):
 
     Implements
     ----------
-    [yandex.cloud/ru/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses][https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses]
+    [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses][https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses]
     """
 
     id: str
@@ -287,7 +287,7 @@ class TokenizeResponse(BaseModel):
 
     Implements
     ----------
-    [yandex.cloud/ru/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses][https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses]
+    [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses][https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#responses]
     """
 
     tokens: list[Token]

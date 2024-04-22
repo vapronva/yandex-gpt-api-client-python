@@ -19,13 +19,13 @@ class BaseYandexFoundationModelsApiError(Exception):
 
     def __init__(
         self,
-        grpc_code: int,
+        grpc_code: int | None,
         http_code: int | None,
         message: str,
         details: list[str],
         solution: str | None,
     ) -> None:
-        self.grpc_code: int = grpc_code
+        self.grpc_code: int | None = grpc_code
         self.http_code: int | None = http_code
         self.message: str = message
         self.details: list[Any] = details

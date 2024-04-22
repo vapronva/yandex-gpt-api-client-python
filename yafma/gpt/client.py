@@ -3,7 +3,9 @@ from time import sleep
 from typing import Any, Generator
 
 from httpx import Client, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeFloat
+
+from yafma.errors import BaseYandexFoundationModelsApiError, QuotaExceededError
 
 from .config import ApiEndpoints
 from .models import (
@@ -17,26 +19,31 @@ from .models import (
 
 
 class YandexGptClient:
-    """Client for Yandex Foundation Models API. Supports text generation, tokenization, and asynchronous operations.
+    """Client for the Yandex Foundation Models API. Supports text generation, tokenization, and "asynchronous" operations.
 
     Attributes
     ----------
-        - `headers` (`dict[str, str]`): API request headers (updated on setting)
-        - `_httpx_client_options` (`dict`): Extra options for httpx client. Hidden attribute; pass as constructor arguments.
+    - `headers` (`dict[str, str]`): Additional headers for the API requests (updated on setting)
+    - `_httpx_client_options` (`dict[str, Any]`): Extra options for httpx client (hidden attribute; pass as constructor arguments when initializing the client)
 
     Methods
     -------
-        - `__enter__`: Initializes httpx client (for context management).
-        - `__exit__`: Closes httpx client (for context management).
-        - `_make_request`: Execute API request and returns response. Hidden method.
-        - `_make_stream_request`: Executes streaming API request and yields response. Hidden method.
-        - `post_completion`: Executes POST request to text generation endpoint and returns response.
-        - `post_completion_stream`: Executes streaming POST request to text generation endpoint and yields response.
-        - `post_completion_async`: Executes async POST request to text generation endpoint and returns operation.
-        - `get_operation_status`: Retrieves operation status.
-        - `wait_for_completion`: Waits for operation completion and returns response.
-        - `post_tokenize`: Executes POST request to tokenize endpoint and returns response.
-        - `post_tokenize_completion`: Executes POST request to tokenize completion endpoint and returns response.
+    - `__enter__`: Initialize httpx client (for context management)
+    - `__exit__`: Close httpx client (for context management)
+    - `_process_response`: Process the API response and raise an error if needed (hidden method)
+    - `_make_request`: Execute an API request and return the response (hidden method)
+    - `_make_stream_request`: Execute a streaming API request and yield the response (hidden method)
+    - `post_completion`: Execute a POST request to the text generation endpoint and return the response
+    - `post_completion_stream`: Execute a streaming POST request to the text generation endpoint and yield the response
+    - `post_completion_async`: Execute an async POST request to the text generation endpoint and return the operation
+    - `get_operation_status`: Retrieve the operation
+    - `wait_for_completion`: Wait for the operation completion and return the response
+    - `post_tokenize`: Execute a POST request to the tokenization endpoint and return the response
+    - `post_tokenize_completion`: Execute a POST request to the tokenization completion endpoint and return the response
+
+    Implements
+    ----------
+    [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/)
     """
 
     def __init__(
@@ -45,23 +52,24 @@ class YandexGptClient:
         iam_token: str | None = None,
         api_key: str | None = None,
         data_logging_enabled: bool = False,
-        **kwargs,
+        **kwargs: dict[str, Any],
     ) -> None:
-        """Initialize `YandexGPTClient`.
+        """Initialize `YandexGptClient`.
 
         Args
         ----
-            - `folder_id` (`str`, optional): Yandex Cloud folder ID. Required with IAM token.
-            - `iam_token` (`str`, optional): IAM token for authentication.
-            - `api_key` (`str`, optional): API key for authentication.
-            - `data_logging_enabled` (`bool`, optional): Enables data logging (on the Yandex's side). Defaults to `False`.
-            - `**kwargs`: Additional httpx client options.
+        - `folder_id` (`str`, optional): Yandex Cloud folder ID (required with IAM token)
+        - `iam_token` (`str`, optional): IAM token for authentication
+        - `api_key` (`str`, optional): API key for authentication
+        - `data_logging_enabled` (`bool`, optional): Enables data logging on the Yandex's side (by default Yandex always logs the data)
+        - `**kwargs` (`dict[str, Any]`, optional): Extra options for the httpx client
 
         Raises
         ------
-            - `ValueError`: If neither `iam_token` nor `api_key` is provided.
-            - `ValueError`: If `folder_id` is not provided when using `iam_token`.
-            - `ValueError`: If both `iam_token` and `api_key` are provided.
+        - `ValueError`:
+            - if neither `iam_token` nor `api_key` is provided
+            - if `folder_id` is not provided when using `iam_token`
+            - if both `iam_token` and `api_key` are provided
         """
         if not iam_token and not api_key:
             msg = "Either iam_token or api_key must be provided"
@@ -78,21 +86,22 @@ class YandexGptClient:
             "Authorization": f"Api-Key {api_key}" if api_key else f"Bearer {iam_token}",
         }
         if api_key and not folder_id:
-            self._headers.pop("x-folder-id")
-        self._httpx_client_options = kwargs or {}
+            _ = self._headers.pop("x-folder-id")
+        self._httpx_client_options: dict[str, Any] = kwargs or {}
+        super().__init__()
 
     def __enter__(self) -> "YandexGptClient":
-        """Initialize httpx client (for context management).
+        """Initialize httpx client in the context manager.
 
         Returns
         -------
-            `YandexGPTClient`: The client instance.
+        - `YandexGptClient`: The client instance
         """
-        self._client = Client(headers=self._headers, **self._httpx_client_options)
+        self._client = Client(headers=self._headers, **self._httpx_client_options)  # type: ignore[reportAny]
         return self
 
-    def __exit__(self, *args, **kwargs) -> None:
-        """Close the httpx client (for context management)."""
+    def __exit__(self, *args: object, **kwargs: dict[str, Any]) -> None:
+        """Close the httpx client in the context manager."""
         self._client.close()
 
     @property
@@ -101,20 +110,49 @@ class YandexGptClient:
 
         Returns
         -------
-            `dict[str, str]`: The headers.
+        - `dict[str, str]`: The headers
         """
         return self._headers
 
     @headers.setter
     def headers(self, new_headers: dict[str, str]) -> None:
-        """Update the headers in the client.
+        """Update the headers used in API requests.
 
         Args
         ----
-            - `new_headers` (`dict[str, str]`): The new headers.
+        - `new_headers` (`dict[str, str]`): The new headers to set
+
+        Notes
+        -----
+        - This method is used to update the headers in the client instance, rather than re-assiging the `headers` attribute.
         """
-        self._headers = new_headers
-        self._client.headers.update(new_headers)
+        self._headers.update(new_headers)
+
+    @staticmethod
+    def _process_response(response: Response) -> None:
+        """Process the API response and raise an error if needed.
+
+        Args
+        ----
+        - `response` (`Response`): API response
+
+        Raises
+        ------
+        - `QuotaExceededError`: If the quota is exceeded
+        - `BaseYandexFoundationModelsApiError`: If the response status code is greater than or equal to 400
+        """
+        match response.status_code:
+            case 429:
+                raise QuotaExceededError()
+            case _:
+                if response.status_code >= 400:
+                    raise BaseYandexFoundationModelsApiError(
+                        grpc_code=None,
+                        http_code=response.status_code,
+                        message=response.text,
+                        details=[],
+                        solution=None,
+                    )
 
     def _make_request(
         self,
@@ -126,23 +164,26 @@ class YandexGptClient:
 
         Args
         ----
-            - `method` (`str`): HTTP method for the request.
-            - `url` (`str`): Request URL.
-            - `request_data` (`BaseModel`, optional): Data to send in the request.
+        - `method` (`str`): HTTP method for the request
+        - `url` (`str`): Request URL
+        - `request_data` (`BaseModel`, optional): Data to send in the request (request body)
 
         Returns
         -------
-            `Response`: API response.
+        - `Response`: API response
 
         Raises
         ------
-            Any exceptions raised by the httpx client itself.
+        Any exceptions raised by the httpx client or other Yandex-specific errors.
         """
-        request_args: dict[str, Any] = {"url": url}
+        request_args: dict[str, Any] = {
+            "url": url,
+            "headers": self._headers,
+        }
         if request_data:
             request_args["json"] = request_data.model_dump(mode="python")
         response: Response = getattr(self._client, method)(**request_args)
-        response.raise_for_status()
+        self._process_response(response)
         return response
 
     def _make_stream_request(
@@ -155,18 +196,26 @@ class YandexGptClient:
 
         Args
         ----
-            - `method` (`str`): HTTP method for the request.
-            - `url` (`str`): Request URL.
-            - `request_data` (`BaseModel`, optional): Data to send in the request.
+        - `method` (`str`): HTTP method for the request
+        - `url` (`str`): Request URL
+        - `request_data` (`BaseModel`, optional): Data to send in the request (request body)
 
         Yields
         ------
-            `str`: API response.
+        - `str`: API response
+
+        Raises
+        ------
+        Any exceptions raised by the httpx client or other Yandex-specific errors.
         """
-        request_args: dict[str, Any] = {"url": url}
+        request_args: dict[str, Any] = {
+            "url": url,
+            "headers": self._headers,
+        }
         if request_data:
             request_args["json"] = request_data.model_dump(mode="python")
-        with self._client.stream(method, **request_args) as response:
+        with self._client.stream(method=method, **request_args) as response:  # type: ignore[reportAny]
+            self._process_response(response)
             yield from response.iter_text()
 
     def post_completion(
@@ -177,24 +226,34 @@ class YandexGptClient:
 
         Args
         ----
-            - `request_data` (`CompletionRequest`): Request data.
+        - `request_data` (`CompletionRequest`): Request data
 
         Returns
         -------
-            `CompletionResponse`: API response.
+        - `CompletionResponse`: API response
+
+        Raises
+        ------
+        - `ValueError`: if `stream` is set to `True`
+        - Any exceptions raised by the httpx client during the request or other Yandex-specific errors
 
         Implements
-        -----------
-            [cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion](https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion)
+        ----------
+        [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGeneration/completion#https-request](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGeneration/completion#https-request)
         """
-        request_data.completionOptions.stream = False
+        if request_data.completionOptions.stream:
+            msg = "`stream` is set to `True`, use `post_completion_stream` instead"
+            raise ValueError(msg)
         response: Response = self._make_request(
             method="post",
             url=ApiEndpoints.TEXT_GENERATION,
             request_data=request_data,
         )
-        parsed_response = CompletionAPIResponse(**response.json())
-        return parsed_response.result
+        parsed_response: Any = response.json()
+        if isinstance(parsed_response, dict):
+            modeled_response = CompletionAPIResponse(**parsed_response)
+            return modeled_response.result
+        raise ValueError(f"Invalid response received: {response.text}")
 
     def post_completion_stream(
         self,
@@ -204,90 +263,116 @@ class YandexGptClient:
 
         Args
         ----
-            - `request_data` (`CompletionRequest`): Request data.
+        - `request_data` (`CompletionRequest`): Request data
 
         Yields
         ------
-            `CompletionResponse`: API response.
+        - `CompletionResponse`: API response
+
+        Raises
+        ------
+        - `ValueError`: if `stream` is set to `False`
+        - Any exceptions raised by the httpx client during the request or other Yandex-specific errors
 
         Implements
-        -----------
-            [cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion](https://cloud.yandex.ru/en/docs/yandexgpt/api-ref/v1/TextGeneration/completion)
+        ----------
+        [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGeneration/completion#https-request](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGeneration/completion#https-request)
         """
-        request_data.completionOptions.stream = True
+        if not request_data.completionOptions.stream:
+            msg = "`stream` is set to `False`, use `post_completion` instead"
+            raise ValueError(msg)
         response: Generator[str, None, None] = self._make_stream_request(
             method="post",
             url=ApiEndpoints.TEXT_GENERATION,
             request_data=request_data,
         )
         for chunk in response:
-            parsed_response = CompletionAPIResponse(**json_loads(chunk))
-            yield parsed_response.result
+            jsoned_chunk: Any = json_loads(chunk)
+            if isinstance(jsoned_chunk, dict):
+                parsed_response = CompletionAPIResponse(**jsoned_chunk)
+                yield parsed_response.result
+            raise ValueError(f"Invalid response received: {chunk}")
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
         """Make an async POST request to the text generation endpoint.
-        Note: this method is designed for low priority requests and can take "some time" to complete, in exchange for "beter quality" and lower prices.
 
         Args
         ----
-            - `request_data` (`CompletionRequest`): Request data.
+        - `request_data` (`CompletionRequest`): Request data
 
         Returns
         -------
-            `Operation`: API operation.
+        - `Operation`: API operation
+
+        Raises
+        ------
+        Any exceptions raised by the httpx client during the request or other Yandex-specific errors.
 
         Implements
-        -----------
-            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
+        ----------
+        [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGenerationAsync/completion#https-request](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/TextGenerationAsync/completion#https-request)
         """
         response: Response = self._make_request(
             method="post",
             url=ApiEndpoints.TEXT_GENERATION_ASYNC,
             request_data=request_data,
         )
-        return Operation(**response.json())
+        jsoned_response: Any = response.json()
+        if isinstance(jsoned_response, dict):
+            return Operation(**jsoned_response)
+        raise ValueError(f"Invalid response received: {response.text}")
 
     def get_operation_status(self, operation_id: str) -> Operation:
-        """Get the status of an operation.
+        """Get the operation by ID.
 
         Args
         ----
-            - `operation_id` (`str`): Operation ID.
+        - `operation_id` (`str`): Operation ID
 
         Returns
         -------
-            `Operation`: API operation.
+        - `Operation`: API operation
+
+        Raises
+        ------
+        Any exceptions raised by the httpx client during the request or other Yandex-specific errors.
 
         Implements
-        -----------
-            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
+        ----------
+        [yandex.cloud/en/docs/api-design-guide/concepts/operation](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
         """
         response: Response = self._make_request(
             method="get",
             url=ApiEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
-        return Operation(**response.json())
+        jsoned_response: Any = response.json()
+        if isinstance(jsoned_response, dict):
+            return Operation(**jsoned_response)
+        raise ValueError(f"Invalid response received: {response.text}")
 
     def wait_for_completion(
         self,
         operation_id: str,
-        poll_interval: float = 1.0,
+        poll_interval: NonNegativeFloat = 1.0,
     ) -> CompletionResponse:
-        """Wait for an operation to complete and return the response.
-        Note: this method is a blocking operation by design.
+        """Wait for the operation to complete and return the response.
 
         Args
         ----
-            `operation_id` (`str`): Operation ID.
-            `poll_interval` (`float`, optional): Polling interval in seconds. Defaults to `1.0`.
+        - `operation_id` (`str`): Operation ID
+        - `poll_interval` (`NonNegativeFloat`, optional): Polling interval in seconds (defaults to `1.0`)
 
         Returns
         -------
-            `CompletionResponse`: API response.
+        - `CompletionResponse`: API response
+
+        Notes
+        -----
+        - This method is a blocking operation by design.
 
         Implements
-        -----------
-            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
+        ----------
+        [yandex.cloud/en/docs/api-design-guide/concepts/operation](https://yandex.cloud/en/docs/api-design-guide/concepts/operation)
         """
         while True:
             operation: Operation = self.get_operation_status(operation_id)
@@ -305,22 +390,25 @@ class YandexGptClient:
 
         Args
         ----
-            - `request_data` (`TokenizeRequest`): Request data.
+        - `request_data` (`TokenizeRequest`): Request data
 
         Returns
         -------
-            `TokenizeResponse`: API response.
+        - `TokenizeResponse`: API response
 
         Implements
-        -----------
-            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenize](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenize)
+        ----------
+        [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#https-request](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenize#https-request)
         """
         response: Response = self._make_request(
             method="post",
             url=ApiEndpoints.TOKENIZE,
             request_data=request_data,
         )
-        return TokenizeResponse(**response.json())
+        jsoned_response: Any = response.json()
+        if isinstance(jsoned_response, dict):
+            return TokenizeResponse(**jsoned_response)
+        raise ValueError(f"Invalid response received: {response.text}")
 
     def post_tokenize_completion(
         self,
@@ -330,19 +418,22 @@ class YandexGptClient:
 
         Args
         ----
-            - `request_data` (`CompletionRequest`): Request data.
+        - `request_data` (`CompletionRequest`): Request data
 
         Returns
         -------
-            `TokenizeResponse`: API response.
+        - `TokenizeResponse`: API response
 
         Implements
-        -----------
-            [cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenizeCompletion](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/Tokenizer/tokenizeCompletion)
+        ----------
+        [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenizeCompletion#https-request](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/Tokenizer/tokenizeCompletion#https-request)
         """
         response: Response = self._make_request(
             method="post",
             url=ApiEndpoints.TOKENIZE_COMPLETION,
             request_data=request_data,
         )
-        return TokenizeResponse(**response.json())
+        jsoned_response: Any = response.json()
+        if isinstance(jsoned_response, dict):
+            return TokenizeResponse(**jsoned_response)
+        raise ValueError(f"Invalid response received: {response.text}")
