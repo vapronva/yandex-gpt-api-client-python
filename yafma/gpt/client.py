@@ -5,7 +5,7 @@ from typing import Any, Generator
 from httpx import Client, Response
 from pydantic import BaseModel
 
-from .config import APIEndpointsV1
+from .config import ApiEndpoints
 from .models import (
     CompletionAPIResponse,
     CompletionRequest,
@@ -16,7 +16,7 @@ from .models import (
 )
 
 
-class YandexGPTClient:
+class YandexGptClient:
     """Client for Yandex Foundation Models API. Supports text generation, tokenization, and asynchronous operations.
 
     Attributes
@@ -81,7 +81,7 @@ class YandexGPTClient:
             self._headers.pop("x-folder-id")
         self._httpx_client_options = kwargs or {}
 
-    def __enter__(self) -> "YandexGPTClient":
+    def __enter__(self) -> "YandexGptClient":
         """Initialize httpx client (for context management).
 
         Returns
@@ -190,7 +190,7 @@ class YandexGPTClient:
         request_data.completionOptions.stream = False
         response: Response = self._make_request(
             method="post",
-            url=APIEndpointsV1.TEXT_GENERATION,
+            url=ApiEndpoints.TEXT_GENERATION,
             request_data=request_data,
         )
         parsed_response = CompletionAPIResponse(**response.json())
@@ -217,7 +217,7 @@ class YandexGPTClient:
         request_data.completionOptions.stream = True
         response: Generator[str, None, None] = self._make_stream_request(
             method="post",
-            url=APIEndpointsV1.TEXT_GENERATION,
+            url=ApiEndpoints.TEXT_GENERATION,
             request_data=request_data,
         )
         for chunk in response:
@@ -242,7 +242,7 @@ class YandexGPTClient:
         """
         response: Response = self._make_request(
             method="post",
-            url=APIEndpointsV1.TEXT_GENERATION_ASYNC,
+            url=ApiEndpoints.TEXT_GENERATION_ASYNC,
             request_data=request_data,
         )
         return Operation(**response.json())
@@ -264,7 +264,7 @@ class YandexGPTClient:
         """
         response: Response = self._make_request(
             method="get",
-            url=APIEndpointsV1.OPERATIONS.format(operation_id=operation_id),
+            url=ApiEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
         return Operation(**response.json())
 
@@ -317,7 +317,7 @@ class YandexGPTClient:
         """
         response: Response = self._make_request(
             method="post",
-            url=APIEndpointsV1.TOKENIZE,
+            url=ApiEndpoints.TOKENIZE,
             request_data=request_data,
         )
         return TokenizeResponse(**response.json())
@@ -342,7 +342,7 @@ class YandexGPTClient:
         """
         response: Response = self._make_request(
             method="post",
-            url=APIEndpointsV1.TOKENIZE_COMPLETION,
+            url=ApiEndpoints.TOKENIZE_COMPLETION,
             request_data=request_data,
         )
         return TokenizeResponse(**response.json())

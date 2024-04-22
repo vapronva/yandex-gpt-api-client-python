@@ -1,16 +1,20 @@
-from typing import Any
+from typing import Any, override
 
 
-class BaseYandexGPTAPIError(Exception):
-    """Base class for YandexGPT API errors.
+class BaseYandexFoundationModelsApiError(Exception):
+    """Base class for the Yandex Foundation Models API errors.
 
     Args
     ----
-        - `grpc_code` (`int`): gRPC status code.
-        - `http_code` (`int`, optional): HTTP status code.
-        - `message` (`str`): Error message.
-        - `details` (`list[str]`): Error details.
-        - `solution` (`str`, optional): Proposed solution for the error.
+    - `grpc_code` (`int`): gRPC status code
+    - `http_code` (`int`, optional): HTTP status code
+    - `message` (`str`): Error message
+    - `details` (`list[str]`): Error details
+    - `solution` (`str`, optional): Proposed solution for the error
+
+    Docs
+    ----
+    [yandex.cloud/en/docs/foundation-models/troubleshooting/error-codes](https://yandex.cloud/en/docs/foundation-models/troubleshooting/error-codes)
     """
 
     def __init__(
@@ -26,12 +30,14 @@ class BaseYandexGPTAPIError(Exception):
         self.message: str = message
         self.details: list[Any] = details
         self.solution: str | None = solution
+        super().__init__(message)
 
+    @override
     def __str__(self) -> str:
         return f"{self.grpc_code=} {self.http_code=} {self.message=} {self.details=} {self.solution=}"
 
 
-class ProhibitedTopicError(BaseYandexGPTAPIError):
+class ProhibitedTopicError(BaseYandexFoundationModelsApiError):
     """Error raised when a prohibited topic is encountered."""
 
     def __init__(self) -> None:
@@ -44,7 +50,7 @@ class ProhibitedTopicError(BaseYandexGPTAPIError):
         )
 
 
-class QuotaExceededError(BaseYandexGPTAPIError):
+class QuotaExceededError(BaseYandexFoundationModelsApiError):
     """Error raised when the quota is exceeded."""
 
     def __init__(self) -> None:
