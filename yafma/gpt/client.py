@@ -30,7 +30,8 @@ class YandexGptClient:
     -------
     - `__enter__`: Initialize httpx client (for context management)
     - `__exit__`: Close httpx client (for context management)
-    - `_process_response`: Process the API response and raise an error if needed (hidden method)
+    - `_process_raw_response`: Process the API response and raise an error if needed (hidden method)
+    - `_process_modeled_response`: Process a response and return an instance of the expected type (hidden method)
     - `_make_request`: Execute an API request and return the response (hidden method)
     - `_make_stream_request`: Execute a streaming API request and yield the response (hidden method)
     - `post_completion`: Execute a POST request to the text generation endpoint and return the response
@@ -129,7 +130,7 @@ class YandexGptClient:
         self._headers.update(new_headers)
 
     @staticmethod
-    def _process_response(response: Response) -> None:
+    def _process_raw_response(response: Response) -> None:
         """Process the API response and raise an error if needed.
 
         Args
@@ -153,6 +154,35 @@ class YandexGptClient:
                         details=[],
                         solution=None,
                     )
+
+    @staticmethod
+    def _process_modeled_response[T: BaseModel](
+        response: Response | str,
+        expected_type: type[T],
+    ) -> T:
+        """Process a response and return an instance of the expected type.
+
+        Args
+        ----
+        - `response` (Response): The response to process.
+        - `expected_type` (`Type[T]`): The expected type of the response.
+
+        Returns
+        -------
+        - An instance of the expected type `T`.
+
+        Raises
+        ------
+        - `ValueError`: if the response is not a dict or cannot be parsed into the expected type
+        """
+        if isinstance(response, str):
+            parsed_response: Any = json_loads(response)
+        else:
+            parsed_response: Any = response.json()
+        if isinstance(parsed_response, dict):
+            return expected_type(**parsed_response)
+        msg = f"Invalid response received: {response.text if isinstance(response, Response) else response}"
+        raise ValueError(msg)
 
     def _make_request(
         self,
@@ -183,7 +213,7 @@ class YandexGptClient:
         if request_data:
             request_args["json"] = request_data.model_dump(mode="python")
         response: Response = getattr(self._client, method)(**request_args)
-        self._process_response(response)
+        self._process_raw_response(response)
         return response
 
     def _make_stream_request(
@@ -215,7 +245,7 @@ class YandexGptClient:
         if request_data:
             request_args["json"] = request_data.model_dump(mode="python")
         with self._client.stream(method=method, **request_args) as response:  # type: ignore[reportAny]
-            self._process_response(response)
+            self._process_raw_response(response)
             yield from response.iter_text()
 
     def post_completion(
@@ -249,11 +279,7 @@ class YandexGptClient:
             url=ApiEndpoints.TEXT_GENERATION,
             request_data=request_data,
         )
-        parsed_response: Any = response.json()
-        if isinstance(parsed_response, dict):
-            modeled_response = CompletionAPIResponse(**parsed_response)
-            return modeled_response.result
-        raise ValueError(f"Invalid response received: {response.text}")
+        return self._process_modeled_response(response, CompletionAPIResponse).result
 
     def post_completion_stream(
         self,
@@ -287,11 +313,7 @@ class YandexGptClient:
             request_data=request_data,
         )
         for chunk in response:
-            jsoned_chunk: Any = json_loads(chunk)
-            if isinstance(jsoned_chunk, dict):
-                parsed_response = CompletionAPIResponse(**jsoned_chunk)
-                yield parsed_response.result
-            raise ValueError(f"Invalid response received: {chunk}")
+            yield self._process_modeled_response(chunk, CompletionAPIResponse).result
 
     def post_completion_async(self, request_data: CompletionRequest) -> Operation:
         """Make an async POST request to the text generation endpoint.
@@ -317,10 +339,7 @@ class YandexGptClient:
             url=ApiEndpoints.TEXT_GENERATION_ASYNC,
             request_data=request_data,
         )
-        jsoned_response: Any = response.json()
-        if isinstance(jsoned_response, dict):
-            return Operation(**jsoned_response)
-        raise ValueError(f"Invalid response received: {response.text}")
+        return self._process_modeled_response(response, Operation)
 
     def get_operation_status(self, operation_id: str) -> Operation:
         """Get the operation by ID.
@@ -339,16 +358,13 @@ class YandexGptClient:
 
         Implements
         ----------
-        [yandex.cloud/en/docs/api-design-guide/concepts/operation](https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/TextGenerationAsync/completion)
+        [yandex.cloud/en/docs/api-design-guide/concepts/operation](https://yandex.cloud/en/docs/api-design-guide/concepts/operation)
         """
         response: Response = self._make_request(
             method="get",
             url=ApiEndpoints.OPERATIONS.format(operation_id=operation_id),
         )
-        jsoned_response: Any = response.json()
-        if isinstance(jsoned_response, dict):
-            return Operation(**jsoned_response)
-        raise ValueError(f"Invalid response received: {response.text}")
+        return self._process_modeled_response(response, Operation)
 
     def wait_for_completion(
         self,
@@ -405,10 +421,7 @@ class YandexGptClient:
             url=ApiEndpoints.TOKENIZE,
             request_data=request_data,
         )
-        jsoned_response: Any = response.json()
-        if isinstance(jsoned_response, dict):
-            return TokenizeResponse(**jsoned_response)
-        raise ValueError(f"Invalid response received: {response.text}")
+        return self._process_modeled_response(response, TokenizeResponse)
 
     def post_tokenize_completion(
         self,
@@ -433,7 +446,4 @@ class YandexGptClient:
             url=ApiEndpoints.TOKENIZE_COMPLETION,
             request_data=request_data,
         )
-        jsoned_response: Any = response.json()
-        if isinstance(jsoned_response, dict):
-            return TokenizeResponse(**jsoned_response)
-        raise ValueError(f"Invalid response received: {response.text}")
+        return self._process_modeled_response(response, TokenizeResponse)
