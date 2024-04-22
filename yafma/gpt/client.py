@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from time import sleep
+from typing import override
 
 from httpx import Response
 from pydantic import NonNegativeFloat
@@ -24,6 +25,17 @@ class YandexGptClient(BaseYandexFoundationModelsClient):
     ----------
     [yandex.cloud/en/docs/foundation-models/text-generation/api-ref/](https://yandex.cloud/en/docs/foundation-models/text-generation/api-ref/)
     """
+
+    @override
+    def __enter__(self) -> "YandexGptClient":
+        """Initialize the context manager (and httpx client).
+
+        Returns
+        -------
+        - `YandexGptClient`: The client instance
+        """
+        _ = super().__enter__()
+        return self
 
     def post_completion(
         self,

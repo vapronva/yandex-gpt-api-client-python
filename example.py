@@ -3,18 +3,23 @@ from time import sleep
 
 from pydantic import NonNegativeFloat, PositiveInt
 
-from yafma import YandexGptClient
-from yafma.gpt.config import GenerativeModelURI
-from yafma.gpt.models import (
+from yafma import EmbeddingsClient, YandexGptClient
+from yafma.embedding import (
+    EmbeddingModelURI,
+    EmbeddingsRequest,
+    EmbeddingsResponse,
+)
+from yafma.gpt import (
     CompletionOptions,
     CompletionRequest,
     CompletionResponse,
+    GenerativeModelURI,
     Message,
     MessageRole,
-    Operation,
     TokenizeRequest,
     TokenizeResponse,
 )
+from yafma.gpt.models import Operation
 
 WAIT_TIME: NonNegativeFloat = 1.5
 TEMPERATURE: NonNegativeFloat = 0.6
@@ -35,7 +40,7 @@ def print_section(section_name: str) -> None:
     print(f"{section_name:=^50}")
 
 
-def test_all_api_endpoints(
+def test_all_gpt_api_endpoints(
     client: YandexGptClient,
     request_payload: CompletionRequest,
 ) -> None:
@@ -75,6 +80,17 @@ def test_all_api_endpoints(
     pr_resp_wait(response_tokenize_completion)
 
 
+def test_all_embedding_api_endpoints(
+    client: EmbeddingsClient,
+    request_payload: EmbeddingsRequest,
+) -> None:
+    print_section("Embeddings")
+    response: EmbeddingsResponse = client.post_embedding(
+        request_data=request_payload,
+    )
+    pr_resp_wait(response)
+
+
 def main() -> None:
     request_payload = CompletionRequest(
         modelUri=GenerativeModelURI.LITE.format(
@@ -102,7 +118,24 @@ def main() -> None:
         iam_token=YC_IAM_TOKEN,
         timeout=10,
     ) as client:
-        test_all_api_endpoints(client, request_payload)
+        test_all_gpt_api_endpoints(
+            client=client,
+            request_payload=request_payload,
+        )
+    with EmbeddingsClient(
+        folder_id=YC_FOLDER_ID,
+        iam_token=YC_IAM_TOKEN,
+        timeout=10,
+    ) as client:
+        test_all_embedding_api_endpoints(
+            client=client,
+            request_payload=EmbeddingsRequest(
+                modelUri=EmbeddingModelURI.QUERY.format(
+                    folder_id=YC_FOLDER_ID,
+                ),
+                text="Ты - Саратов",
+            ),
+        )
 
 
 if __name__ == "__main__":
