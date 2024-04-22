@@ -66,7 +66,7 @@ build-package:
   stage: package
   image: docker.io/library/python:3.12
   before_script:
-    - pip install 'setuptools>=69,<70' build wheel
+    - pip install 'setuptools>=69,<70' 'build>=1,<2' 'wheel>=0.43,<0.44'
   script:
     - python -m build
   rules:
