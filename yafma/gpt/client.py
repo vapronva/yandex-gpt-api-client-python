@@ -53,7 +53,7 @@ class YandexGptClient:
         iam_token: str | None = None,
         api_key: str | None = None,
         data_logging_enabled: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs,
     ) -> None:
         """Initialize `YandexGptClient`.
 
@@ -101,7 +101,7 @@ class YandexGptClient:
         self._client = Client(headers=self._headers, **self._httpx_client_options)  # type: ignore[reportAny]
         return self
 
-    def __exit__(self, *args: object, **kwargs: dict[str, Any]) -> None:
+    def __exit__(self, *args, **kwargs) -> None:
         """Close the httpx client in the context manager."""
         self._client.close()
 

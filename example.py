@@ -45,9 +45,11 @@ def test_all_api_endpoints(
     )
     pr_resp_wait(response)
     print_section("TextGeneration (stream)")
+    request_payload.completionOptions.stream = True
     response_stream = client.post_completion_stream(request_data=request_payload)
     for chunk_response in response_stream:
         print(chunk_response.alternatives[0].message.text)
+    request_payload.completionOptions.stream = False
     sleep(WAIT_TIME)
     print_section("TextGenerationAsync")
     operation: Operation = client.post_completion_async(
